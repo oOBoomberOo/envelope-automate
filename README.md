@@ -94,6 +94,8 @@ pipes extract.
 ./gradlew build          # JDK 21; output in build/libs
 ./gradlew runClient      # dev client with Envelope on the classpath
 ```
+Releases are built by [`.github/workflows/release.yml`](.github/workflows/release.yml): pushing a `v*` tag builds
+the jar and publishes it as a GitHub release.
 Dependencies (exact pins in `gradle.properties`): Envelope 0.8.2 from Modrinth maven (`6mpcJy5P`), and the
 two libraries Envelope bundles: Mortaar 1.7.2 and Sable Companion 1.6.0.
 
