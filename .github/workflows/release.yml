@@ -1,4 +1,4 @@
-﻿name: Release
+name: Release
 
 on:
   push:
@@ -31,6 +31,22 @@ jobs:
 
       - name: Show artifacts
         run: ls -l build/libs
+
+      - name: Validate mod metadata
+        run: |
+          python - <<'PY'
+          import glob, tomllib, zipfile
+          jars = glob.glob("build/libs/*.jar")
+          assert jars, "no jar found in build/libs"
+          for jar in jars:
+              with zipfile.ZipFile(jar) as archive:
+                  data = archive.read("META-INF/neoforge.mods.toml")
+              meta = tomllib.loads(data.decode("utf-8"))
+              assert meta.get("modLoader") == "javafml", f"{jar}: bad modLoader"
+              mods = meta.get("mods") or []
+              assert mods and mods[0].get("modId"), f"{jar}: no [[mods]]"
+              print(f"{jar}: {mods[0]['modId']} {mods[0].get('version')}")
+          PY
 
       - name: Publish GitHub release
         if: startsWith(github.ref, 'refs/tags/v')
