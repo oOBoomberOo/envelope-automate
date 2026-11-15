@@ -97,6 +97,49 @@ var generateModMetadata = tasks.register('generateModMetadata', ProcessResources
 sourceSets.main.resources.srcDir generateModMetadata
 neoForge.ideSyncTask generateModMetadata
 
+// Rejects UTF-8 byte order marks in hand-maintained text files.
+// PowerShell's `Set-Content -Encoding utf8` writes one, and TOML/JSON parsers fail on it, which turned into a
+// mod that would not load. Runs before the mod metadata is generated and as part of `check` (so in CI too).
+var checkNoBom = tasks.register('checkNoBom') {
+    group = 'verification'
+    description = 'Fails if a text file starts with a UTF-8 byte order mark.'
+
+    var textExtensions = ['.java', '.gradle', '.properties', '.toml', '.json', '.mcmeta', '.md', '.yml', '.yaml']
+    var roots = [file('src'), file('.github')]
+    var looseFiles = ['gradle.properties', 'settings.gradle', 'build.gradle', 'README.md'].collect { file(it) }
+
+    outputs.upToDateWhen { false }
+    doLast {
+        var offenders = []
+        var files = new ArrayList(looseFiles)
+        roots.each { root ->
+            if (!root.exists()) return
+            if (root.isFile()) { files.add(root); return }
+            root.eachFileRecurse { f -> if (f.isFile()) files.add(f) }
+        }
+        files.each { f ->
+            if (!f.isFile() || !textExtensions.any { f.name.endsWith(it) }) return
+            var head = new byte[3]
+            var inStream = new FileInputStream(f)
+            try {
+                var read = inStream.read(head)
+                if (read == 3 && (head[0] & 0xFF) == 0xEF && (head[1] & 0xFF) == 0xBB && (head[2] & 0xFF) == 0xBF) {
+                    offenders.add(f.absolutePath)
+                }
+            } finally {
+                inStream.close()
+            }
+        }
+        if (!offenders.isEmpty()) {
+            throw new GradleException("UTF-8 byte order mark found in:\n  " + offenders.join("\n  ")
+                    + "\nSave these files as UTF-8 without BOM (do not use PowerShell's Set-Content -Encoding utf8).")
+        }
+    }
+}
+
+tasks.named('generateModMetadata') { dependsOn checkNoBom }
+tasks.named('check') { dependsOn checkNoBom }
+
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
 }

@@ -9,4 +9,5 @@ out/
 # Local-only tooling and agent scratch, not part of the project
 tools/
 continue-from-here.md
+AGENTS.md
 .opencode/
