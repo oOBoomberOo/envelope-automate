@@ -2,6 +2,11 @@
   "block.envelope_automate.mail_packager": "Mail Packager",
   "block.envelope_automate.depository_terminal": "Depository Terminal",
   "item.envelope_automate.withdrawal_order": "Withdrawal Order",
+  "item.envelope_automate.direct_letter": "Direct Letter",
+  "item.envelope_automate.sealed_direct_letter": "Sealed Direct Letter",
+  "item.envelope_automate.direct_package": "Direct Package",
+  "item.envelope_automate.sealed_direct_package": "Sealed Direct Package",
+  "entity.envelope_automate.direct_mail_pigeon": "Direct Mail Pigeon",
   "item.envelope_automate.seal_stamp.fingerprint": "Fingerprint: %s",
   "item.envelope_automate.seal_stamp.fingerprint_hint": "Sneak + Use to record your fingerprint",
   "message.envelope_automate.fingerprint.recorded": "Fingerprint recorded: %s",
@@ -15,7 +20,7 @@
   "gui.envelope_automate.mail_packager.to": "To: %s",
   "gui.envelope_automate.mail_packager.no_address": "No address tag",
   "gui.envelope_automate.mail_packager.input_slot": "Packing Buffer",
-  "gui.envelope_automate.mail_packager.input_slot.description": "Items piped in wait here. A redstone pulse packs up to one package worth of them. While powered, it also packs automatically once nothing has been added or removed for 1.5 seconds.",
+  "gui.envelope_automate.mail_packager.input_slot.description": "Items piped in wait here. A redstone pulse packs up to one package worth of them. While powered, it also packs automatically as soon as the buffer fills a whole box (all 6 slots full) or once nothing has been added or removed for 1.5 seconds.",
   "gui.envelope_automate.mail_packager.output_slot": "Unpacked Items",
   "gui.envelope_automate.mail_packager.output_slot.description": "Contents of packages received by the attached mailbox. Pipes can extract from here.",
   "gui.envelope_automate.mail_packager.address_slot": "Address Tag",
@@ -24,6 +29,12 @@
   "gui.envelope_automate.mail_packager.seal_slot.description": "Packages are sealed with this stamp, signed as the stamp's fingerprint (or the packager's owner if it has none). The stamp is not consumed.",
   "gui.envelope_automate.mail_packager.outgoing_slot": "Outgoing Package",
   "gui.envelope_automate.mail_packager.outgoing_slot.description": "Waits here until the attached mailbox's outgoing slot is free. No new package is packed while one is waiting.",
+
+  "gui.envelope_automate.mail_packager.mode.regular": "Packing: Regular Mail",
+  "gui.envelope_automate.mail_packager.mode.regular.description": "Packages are picked up by a courier and travel through the sorting facility. They reach any address.",
+  "gui.envelope_automate.mail_packager.mode.direct": "Packing: Direct Mail",
+  "gui.envelope_automate.mail_packager.mode.direct.description": "A pigeon flies each package straight to the recipient's mailbox, skipping the sorting facility. No courier food is needed, but the mailbox must be loaded and within 8 chunks.",
+  "gui.envelope_automate.mail_packager.mode.toggle": "Click to switch",
 
   "gui.envelope_automate.depository_terminal.search": "Search...",
   "gui.envelope_automate.depository_terminal.storage": "%s/%s mail",
@@ -52,6 +63,9 @@
 
   "gui.envelope_automate.delivery_log.message.withdrawal_order.nothing_available": "None of the ordered items are in the account",
   "gui.envelope_automate.delivery_log.message.withdrawal_order.destination_not_found": "Delivery address not found",
+  "gui.envelope_automate.delivery_log.message.direct_mail.out_of_range": "Direct Mail only reaches mailboxes within %s chunks",
+  "gui.envelope_automate.delivery_log.message.direct_mail.not_loaded": "Recipient's mailbox is not loaded",
+  "gui.envelope_automate.delivery_log.message.direct_mail.not_a_mailbox": "Direct Mail can only be sent to a mailbox",
 
   "letter.envelope_automate.withdrawal_order.header": "To the Cloud Depository,\nplease forward the following items from my account to %s:\n",
   "letter.envelope_automate.withdrawal_order.line": "- %s × %s",

@@ -45,7 +45,8 @@ public class MailPackagerBlockEntity extends BlockEntity implements MenuProvider
     public static final int CONFIG_SEAL_STAMP = 1;
 
     public static final int DATA_MAILBOX_ATTACHED = 0;
-    public static final int DATA_COUNT = 1;
+    public static final int DATA_DIRECT = 1;
+    public static final int DATA_COUNT = 2;
 
     private static final int TICK_INTERVAL = 4;
 
@@ -110,11 +111,19 @@ public class MailPackagerBlockEntity extends BlockEntity implements MenuProvider
     private final ContainerData dataAccess = new ContainerData() {
         @Override
         public int get(int index) {
-            return index == DATA_MAILBOX_ATTACHED && mailboxAttached ? 1 : 0;
+            return switch (index) {
+                case DATA_MAILBOX_ATTACHED -> mailboxAttached ? 1 : 0;
+                case DATA_DIRECT -> directMode ? 1 : 0;
+                default -> 0;
+            };
         }
 
         @Override
         public void set(int index, int value) {
+            if (index == DATA_DIRECT) {
+                directMode = value != 0;
+                setChanged();
+            }
         }
 
         @Override
@@ -126,6 +135,7 @@ public class MailPackagerBlockEntity extends BlockEntity implements MenuProvider
     private @Nullable UUID ownerId;
     private String ownerName = "";
     private boolean mailboxAttached;
+    private boolean directMode;
     private long lastInputChangeTime;
     private boolean packing;
 
@@ -193,15 +203,23 @@ public class MailPackagerBlockEntity extends BlockEntity implements MenuProvider
     }
 
     /**
-     * Powered continuously: pack once the buffer has settled (no inserts/removals for {@link #SETTLE_TICKS}).
+     * While powered, pack automatically as soon as either:
+     * <ul>
+     *     <li>the buffer holds a full box — all {@link PackageContents#SLOTS} slots completely filled, so a steady
+     *     item stream is sent as full packages instead of waiting for it to stop; or</li>
+     *     <li>the buffer has settled (no inserts/removals for {@link #SETTLE_TICKS}).</li>
+     * </ul>
      * Changes made by packing itself don't count, so a buffer holding more than one package keeps packing
      * as soon as the previous package has been posted.
      */
     private boolean shouldAutoPack(ServerLevel level) {
-        return getBlockState().getValue(MailPackagerBlock.POWERED)
-              && outgoing.getStackInSlot(0).isEmpty()
-              && level.getGameTime() - lastInputChangeTime >= SETTLE_TICKS
-              && !isInputEmpty();
+        if (!getBlockState().getValue(MailPackagerBlock.POWERED)
+              || !outgoing.getStackInSlot(0).isEmpty()
+              || isInputEmpty()) {
+            return false;
+        }
+
+        return isFullPackage() || level.getGameTime() - lastInputChangeTime >= SETTLE_TICKS;
     }
 
     private boolean isInputEmpty() {
@@ -213,12 +231,30 @@ public class MailPackagerBlockEntity extends BlockEntity implements MenuProvider
         return true;
     }
 
+    /**
+     * True when the buffer would fill a package completely: every one of its {@link PackageContents#SLOTS}
+     * slots taken up by a full stack (a single item, for stacks of one).
+     */
+    private boolean isFullPackage() {
+        List<ItemStack> contents = collectContents();
+        if (contents.size() < PackageContents.SLOTS) {
+            return false;
+        }
+
+        for (ItemStack stack : contents) {
+            if (stack.getCount() < stack.getMaxStackSize()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     // -- Packing
 
     /**
-     * Called on a rising redstone edge. Packs up to one package worth of buffered items, addresses it with the
-     * address tag's address, seals it with the seal stamp (if present) and posts it to the attached mailbox.
-     * Neither the address tag nor the seal stamp is consumed.
+     * Called on a rising redstone edge, and automatically (see {@link #shouldAutoPack}). Packs up to one package
+     * worth of buffered items, addresses it with the address tag's address, seals it with the seal stamp (if
+     * present) and posts it to the attached mailbox. Neither the address tag nor the seal stamp is consumed.
      */
     public void pack() {
         if (!(level instanceof ServerLevel serverLevel) || !outgoing.getStackInSlot(0).isEmpty()) {
@@ -230,18 +266,20 @@ public class MailPackagerBlockEntity extends BlockEntity implements MenuProvider
             return;
         }
 
-        List<ItemStack> contents;
-        packing = true;
-        try {
-            contents = takePackageContents();
-        } finally {
-            packing = false;
-        }
+        List<ItemStack> contents = collectContents();
         if (contents.isEmpty()) {
             return;
         }
 
-        PackageItem packageItem = Envelope.Items.PACKAGE.get();
+        packing = true;
+        try {
+            consume(contents);
+        } finally {
+            packing = false;
+        }
+
+        // Direct packages are picked up from the mailbox by DirectMailDispatcher instead of a courier.
+        PackageItem packageItem = directMode ? ModRegistry.DIRECT_PACKAGE.get() : Envelope.Items.PACKAGE.get();
         ItemStack pkg = new ItemStack(packageItem);
         pkg.set(Envelope.DataComponents.PACKAGE_CONTENTS, new PackageContents(contents));
         pkg.set(Envelope.DataComponents.MAIL_ADDRESS_TAG, address);
@@ -264,10 +302,10 @@ public class MailPackagerBlockEntity extends BlockEntity implements MenuProvider
     }
 
     /**
-     * Removes up to {@link PackageContents#SLOTS} stacks worth of items from the input buffer,
-     * merging partial stacks of the same item together.
+     * What one package would hold right now: up to {@link PackageContents#SLOTS} stacks worth of buffered items,
+     * merging partial stacks of the same item together. Does not modify the buffer.
      */
-    private List<ItemStack> takePackageContents() {
+    private List<ItemStack> collectContents() {
         List<ItemStack> contents = new ArrayList<>();
 
         for (int slot = 0; slot < input.getSlots(); slot++) {
@@ -294,14 +332,27 @@ public class MailPackagerBlockEntity extends BlockEntity implements MenuProvider
                 contents.add(stack.copyWithCount(moved));
                 remaining -= moved;
             }
-
-            int taken = stack.getCount() - remaining;
-            if (taken > 0) {
-                input.extractItem(slot, taken, false);
-            }
         }
 
         return contents;
+    }
+
+    /**
+     * Removes the given amounts from the input buffer (as chosen by {@link #collectContents}).
+     */
+    private void consume(List<ItemStack> contents) {
+        for (ItemStack content : contents) {
+            int remaining = content.getCount();
+            for (int slot = 0; slot < input.getSlots() && remaining > 0; slot++) {
+                ItemStack stack = input.getStackInSlot(slot);
+                if (stack.isEmpty() || !ItemStack.isSameItemSameComponents(stack, content)) {
+                    continue;
+                }
+                int taken = Math.min(remaining, stack.getCount());
+                input.extractItem(slot, taken, false);
+                remaining -= taken;
+            }
+        }
     }
 
     private void postOutgoing(MailboxBlockEntity mailbox) {
@@ -348,7 +399,8 @@ public class MailPackagerBlockEntity extends BlockEntity implements MenuProvider
     }
 
     private static boolean isUnpackable(ServerLevel level, ItemStack mail) {
-        if (!mail.is(Envelope.Items.PACKAGE.get()) && !mail.is(Envelope.Items.SEALED_PACKAGE.get())) {
+        if (!mail.is(Envelope.Items.PACKAGE.get()) && !mail.is(Envelope.Items.SEALED_PACKAGE.get())
+              && !mail.is(ModRegistry.DIRECT_PACKAGE.get()) && !mail.is(ModRegistry.SEALED_DIRECT_PACKAGE.get())) {
             return false;
         }
 
@@ -403,6 +455,7 @@ public class MailPackagerBlockEntity extends BlockEntity implements MenuProvider
         if (!ownerName.isEmpty()) {
             tag.putString("owner_name", ownerName);
         }
+        tag.putBoolean("direct_mode", directMode);
     }
 
     @Override
@@ -414,6 +467,7 @@ public class MailPackagerBlockEntity extends BlockEntity implements MenuProvider
         outgoing.deserializeNBT(registries, tag.getCompound("outgoing"));
         ownerId = tag.hasUUID("owner") ? tag.getUUID("owner") : null;
         ownerName = tag.getString("owner_name");
+        directMode = tag.getBoolean("direct_mode");
     }
 
     /**

@@ -26,11 +26,17 @@ Place it next to a mailbox (any side counts as attached).
   config slot, seals it with the **Seal Stamp** in its config slot (optional, signed on behalf of the player
   who placed the packager), and puts it in the mailbox's outgoing slot for a courier to pick up.
   Nothing is used up: no paper box, no address tag, no stamp durability.
-- **Continuous power:** while powered, it also packs whatever is in the buffer once nothing has been inserted
-  or removed for 1.5 seconds (`SETTLE_TICKS` = 30). Its own packing doesn't reset that timer, so a buffer with
-  more than one package's worth keeps packing as each package gets posted.
+- **Continuous power:** while powered, it also packs automatically, whichever comes first:
+  - the buffer holds a **full box** — all 6 package slots completely filled (a full stack each, or one item
+    for stacks of one), so a steady item stream ships as full packages instead of waiting for it to stop;
+  - or nothing has been inserted or removed for 1.5 seconds (`SETTLE_TICKS` = 30).
+
+  Its own packing doesn't reset that timer, so a buffer with more than one package's worth keeps packing as each
+  package gets posted.
   If the mailbox's outgoing slot is taken, the package waits in the packager's outgoing slot, and no new
   package is packed until it has been posted.
+- **Regular / Direct Mail toggle:** the button left of the outgoing slot switches between packing regular
+  packages and [Direct Mail](#direct-mail) packages. The setting is saved with the block.
 - **Unpacking:** packages (sealed or unsealed, but not ones with a locked seal) arriving in the mailbox's inbox
   are pulled out and unpacked into an 18-slot output buffer, but only when all of their contents fit.
   Letters are left in the mailbox.
@@ -54,6 +60,29 @@ as-is.
   - Otherwise you get the letter and can post it from any mailbox.
 - When the order arrives, the depository takes the items out of your account (reducing stored packages, and
   removing them once empty) and sends them in packages sealed by the depository to the destination.
+
+## Direct Mail
+Pale blue letters and packages that go **point-to-point** instead of through the sorting facility.
+
+- **Items:** Direct Letter, Sealed Direct Letter, Direct Package, Sealed Direct Package. Craft any Envelope
+  letter or package (sealed or not) with **light blue dye**; contents, address, and seal carry over. They open,
+  seal, unseal, and unpack exactly like the regular ones. Placed in the world they use Envelope's regular
+  letter/package block, but keep their identity when picked back up.
+- **Sending:** put addressed Direct Mail in a mailbox's outgoing slot. Within half a second a **Direct Mail
+  Pigeon** (a mailman pigeon, like the Mail Service's) appears in front of the mailbox, takes the mail and flies
+  straight to the recipient's mailbox, then vanishes. No courier food is needed. It is Envelope's own pigeon with
+  Envelope's flight AI, so it paths around obstacles, carries the mail on its back, and drops the mail if killed.
+  Both mailboxes need a free block in front of them that a pigeon can fly to.
+- **Limits:** the recipient must be a **mailbox** (a player address resolves to that player's default mailbox)
+  that is **loaded** and within **8 chunks** of the sender (a 17×17 chunk square around the sender's chunk).
+  Service addresses such as the Cloud Depository can't be reached.
+- **Failures:** undeliverable Direct Mail goes back into the sender's inbox marked *returned*, with the reason in
+  its delivery log (Shift in the tooltip). If the recipient's inbox turns out to be full on arrival, or the pigeon
+  can't reach the mailbox in time, the pigeon carries the mail back. If the sender's inbox is full, the mail waits
+  in the outgoing slot. A pigeon that ends up outside the simulated area hands the mail in immediately instead of
+  flying the rest of the way.
+- If the mailbox also holds courier food, a pigeon or bat can occasionally grab Direct Mail before its own pigeon shows up;
+  it is then delivered the regular way.
 
 ## Automated loop
 Collection system → pipes → **Mail Packager** (Address Tag: *Cloud Depository*, your Seal Stamp) → deposited

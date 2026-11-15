@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "envelope_automate:item/direct_letter_open"
+  }
+}

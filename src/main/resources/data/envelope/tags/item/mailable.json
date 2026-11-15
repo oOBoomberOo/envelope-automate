@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    "envelope_automate:direct_letter",
+    "envelope_automate:sealed_direct_letter",
+    "envelope_automate:direct_package",
+    "envelope_automate:sealed_direct_package"
+  ]
+}

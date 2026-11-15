@@ -1,12 +1,15 @@
 package io.github.envelopeautomate.client;
 
+import io.github.envelopeautomate.ModRegistry;
 import io.github.envelopeautomate.menu.MailPackagerMenu;
 import io.github.mortuusars.envelope.Envelope;
 import io.github.mortuusars.envelope.world.mail.address.Address;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
@@ -20,10 +23,12 @@ public class MailPackagerScreen extends AbstractContainerScreen<MailPackagerMenu
     private static final int TEXT_COLOR = 0x404040;
     private static final int OK_COLOR = 0x2E7D32;
     private static final int WARN_COLOR = 0xB71C1C;
+    private static final int DIRECT_BUTTON_COLOR = 0xFFA9CBE8;
 
     private final ItemStack addressTagIcon = new ItemStack(Envelope.Items.ADDRESS_TAG.get());
     private final ItemStack sealStampIcon = new ItemStack(Envelope.Items.SEAL_STAMP.get());
     private final ItemStack packageIcon = new ItemStack(Envelope.Items.PACKAGE.get());
+    private final ItemStack directPackageIcon = new ItemStack(ModRegistry.DIRECT_PACKAGE.get());
 
     public MailPackagerScreen(MailPackagerMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
@@ -47,7 +52,35 @@ public class MailPackagerScreen extends AbstractContainerScreen<MailPackagerMenu
 
         renderGhost(graphics, MailPackagerMenu.ADDRESS_SLOT, addressTagIcon);
         renderGhost(graphics, MailPackagerMenu.SEAL_SLOT, sealStampIcon);
-        renderGhost(graphics, MailPackagerMenu.OUTGOING_SLOT, packageIcon);
+        renderGhost(graphics, MailPackagerMenu.OUTGOING_SLOT, currentPackageIcon());
+
+        // Regular / Direct Mail toggle
+        int buttonX = leftPos + MailPackagerMenu.DIRECT_BUTTON_X;
+        int buttonY = topPos + MailPackagerMenu.CONFIG_Y;
+        boolean hovered = isOverDirectButton(mouseX, mouseY);
+        graphics.fill(buttonX - 1, buttonY - 1, buttonX + 17, buttonY + 17, hovered ? GuiDraw.HIGHLIGHT : GuiDraw.BLACK);
+        graphics.fill(buttonX, buttonY, buttonX + 16, buttonY + 16, menu.isDirectMode() ? DIRECT_BUTTON_COLOR : GuiDraw.BODY);
+        graphics.renderFakeItem(currentPackageIcon(), buttonX, buttonY);
+    }
+
+    private ItemStack currentPackageIcon() {
+        return menu.isDirectMode() ? directPackageIcon : packageIcon;
+    }
+
+    private boolean isOverDirectButton(double mouseX, double mouseY) {
+        int x = leftPos + MailPackagerMenu.DIRECT_BUTTON_X;
+        int y = topPos + MailPackagerMenu.CONFIG_Y;
+        return mouseX >= x - 1 && mouseX < x + 17 && mouseY >= y - 1 && mouseY < y + 17;
+    }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (button == 0 && isOverDirectButton(mouseX, mouseY) && minecraft != null && minecraft.gameMode != null) {
+            minecraft.gameMode.handleInventoryButtonClick(menu.containerId, MailPackagerMenu.BUTTON_ID_DIRECT);
+            minecraft.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1f));
+            return true;
+        }
+        return super.mouseClicked(mouseX, mouseY, button);
     }
 
     private void renderGhost(GuiGraphics graphics, int slotIndex, ItemStack icon) {
@@ -72,7 +105,7 @@ public class MailPackagerScreen extends AbstractContainerScreen<MailPackagerMenu
               8, MailPackagerMenu.OUTPUT_Y - 11, TEXT_COLOR, false);
 
         int textX = MailPackagerMenu.SEAL_SLOT_X + 22;
-        int maxWidth = MailPackagerMenu.OUTGOING_SLOT_X - 4 - textX;
+        int maxWidth = MailPackagerMenu.DIRECT_BUTTON_X - 4 - textX;
 
         @Nullable Address address = menu.getAddressTag().get(Envelope.DataComponents.ADDRESS_TAG_ADDRESS);
         Component addressLine = address != null
@@ -96,6 +129,17 @@ public class MailPackagerScreen extends AbstractContainerScreen<MailPackagerMenu
 
     @Override
     protected void renderTooltip(GuiGraphics graphics, int mouseX, int mouseY) {
+        if (menu.getCarried().isEmpty() && isOverDirectButton(mouseX, mouseY)) {
+            String mode = menu.isDirectMode() ? "direct" : "regular";
+            List<FormattedCharSequence> lines = new ArrayList<>();
+            lines.add(Component.translatable("gui.envelope_automate.mail_packager.mode." + mode).getVisualOrderText());
+            lines.addAll(font.split(Component.translatable("gui.envelope_automate.mail_packager.mode." + mode + ".description")
+                  .withStyle(ChatFormatting.GRAY), 200));
+            lines.add(Component.translatable("gui.envelope_automate.mail_packager.mode.toggle")
+                  .withStyle(ChatFormatting.DARK_GRAY).getVisualOrderText());
+            graphics.renderTooltip(font, lines, mouseX, mouseY);
+            return;
+        }
         if (menu.getCarried().isEmpty() && hoveredSlot != null && !hoveredSlot.hasItem()) {
             int index = menu.slots.indexOf(hoveredSlot);
             String key = index == MailPackagerMenu.ADDRESS_SLOT ? "address_slot"

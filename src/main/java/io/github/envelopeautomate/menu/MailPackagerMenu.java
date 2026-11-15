@@ -31,6 +31,9 @@ public class MailPackagerMenu extends AbstractContainerMenu {
     public static final int ADDRESS_SLOT_X = 8;
     public static final int SEAL_SLOT_X = 26;
     public static final int OUTGOING_SLOT_X = 152;
+    public static final int DIRECT_BUTTON_X = 132;
+
+    public static final int BUTTON_ID_DIRECT = 0;
 
     public static final int INPUT_START = 0;
     public static final int OUTPUT_START = INPUT_START + MailPackagerBlockEntity.BUFFER_SLOTS;
@@ -88,6 +91,19 @@ public class MailPackagerMenu extends AbstractContainerMenu {
 
     public boolean isMailboxAttached() {
         return data.get(MailPackagerBlockEntity.DATA_MAILBOX_ATTACHED) == 1;
+    }
+
+    public boolean isDirectMode() {
+        return data.get(MailPackagerBlockEntity.DATA_DIRECT) == 1;
+    }
+
+    @Override
+    public boolean clickMenuButton(Player player, int id) {
+        if (id == BUTTON_ID_DIRECT) {
+            data.set(MailPackagerBlockEntity.DATA_DIRECT, isDirectMode() ? 0 : 1);
+            return true;
+        }
+        return false;
     }
 
     public ItemStack getAddressTag() {

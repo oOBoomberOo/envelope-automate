@@ -1,0 +1,16 @@
+{
+  "type": "envelope:component_transferring",
+  "category": "misc",
+  "source": {
+    "item": "envelope:package"
+  },
+  "ingredients": [
+    {
+      "item": "minecraft:light_blue_dye"
+    }
+  ],
+  "result": {
+    "count": 1,
+    "id": "envelope_automate:direct_package"
+  }
+}

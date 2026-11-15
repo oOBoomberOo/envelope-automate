@@ -1,0 +1,22 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "envelope_automate:item/direct_letter"
+  },
+  "overrides": [
+    {
+      "predicate": {
+        "envelope:has_content": 0.0,
+        "envelope:open": 1.0
+      },
+      "model": "envelope_automate:item/direct_letter_open"
+    },
+    {
+      "predicate": {
+        "envelope:has_content": 1.0,
+        "envelope:open": 1.0
+      },
+      "model": "envelope_automate:item/direct_letter_open_content"
+    }
+  ]
+}

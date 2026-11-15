@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "envelope_automate:item/sealed_direct_letter",
+    "layer1": "envelope:item/sealed_letter_overlay"
+  }
+}
