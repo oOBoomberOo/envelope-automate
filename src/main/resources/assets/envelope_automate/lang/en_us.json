@@ -33,7 +33,7 @@
   "gui.envelope_automate.mail_packager.mode.regular": "Packing: Regular Mail",
   "gui.envelope_automate.mail_packager.mode.regular.description": "Packages are picked up by a courier and travel through the sorting facility. They reach any address.",
   "gui.envelope_automate.mail_packager.mode.direct": "Packing: Direct Mail",
-  "gui.envelope_automate.mail_packager.mode.direct.description": "A pigeon flies each package straight to the recipient's mailbox, skipping the sorting facility. No courier food is needed, but the mailbox must be loaded and within 8 chunks.",
+  "gui.envelope_automate.mail_packager.mode.direct.description": "A pigeon flies each package straight to the recipient's mailbox, skipping the sorting facility. No courier food is needed. If the recipient isn't a loaded mailbox within 8 chunks, the package is sent as regular mail instead.",
   "gui.envelope_automate.mail_packager.mode.toggle": "Click to switch",
 
   "gui.envelope_automate.depository_terminal.search": "Search...",
@@ -63,16 +63,11 @@
 
   "gui.envelope_automate.delivery_log.message.withdrawal_order.nothing_available": "None of the ordered items are in the account",
   "gui.envelope_automate.delivery_log.message.withdrawal_order.destination_not_found": "Delivery address not found",
-  "gui.envelope_automate.delivery_log.message.direct_mail.out_of_range": "Direct Mail only reaches mailboxes within %s chunks",
-  "gui.envelope_automate.delivery_log.message.direct_mail.not_loaded": "Recipient's mailbox is not loaded",
-  "gui.envelope_automate.delivery_log.message.direct_mail.not_a_mailbox": "Direct Mail can only be sent to a mailbox",
 
   "letter.envelope_automate.withdrawal_order.header": "To the Cloud Depository,\nplease forward the following items from my account to %s:\n",
   "letter.envelope_automate.withdrawal_order.line": "- %s × %s",
   "letter.envelope_automate.withdrawal_order.return_to_sender": "the mailbox this order is sent from",
 
   "message.envelope_automate.withdrawal_order.empty": "Nothing selected",
-  "message.envelope_automate.withdrawal_order.unknown_address": "Unknown address: %s",
-  "message.envelope_automate.withdrawal_order.posted": "Withdrawal order posted at mailbox %s. It will be sent with the next courier.",
-  "message.envelope_automate.withdrawal_order.created": "Withdrawal order created. Post it from any mailbox to have the items delivered."
+  "message.envelope_automate.withdrawal_order.unknown_address": "Unknown address: %s"
 }

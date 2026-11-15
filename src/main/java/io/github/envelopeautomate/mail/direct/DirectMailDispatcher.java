@@ -3,16 +3,13 @@ package io.github.envelopeautomate.mail.direct;
 import io.github.mortuusars.envelope.Envelope;
 import io.github.mortuusars.envelope.world.block.mailbox.MailboxBlockEntity;
 import io.github.mortuusars.envelope.world.block.mailbox.Mailboxes;
-import io.github.mortuusars.envelope.world.item.component.mail.log.DeliveryRecord;
 import io.github.mortuusars.envelope.world.item.mail.Mail;
 import io.github.mortuusars.envelope.world.mail.MailService;
 import io.github.mortuusars.envelope.world.mail.address.Address;
 import io.github.mortuusars.envelope.world.mail.address.type.BlockAddress;
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.Containers;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 import org.jetbrains.annotations.Nullable;
@@ -23,7 +20,8 @@ import java.util.Optional;
 /**
  * Picks Direct Mail out of the outgoing slot of every loaded mailbox and sends it straight to the recipient's
  * mailbox with a {@link DirectMailPigeon}. No courier food is needed and the sorting facility is skipped.
- * Mail that can't be delivered directly goes back into the sender's inbox with the reason in its delivery log.
+ * Mail that can't be delivered directly is converted to regular mail and left in the outgoing slot for Envelope's
+ * own couriers.
  */
 public final class DirectMailDispatcher {
     private static final int INTERVAL = 10;
@@ -65,44 +63,38 @@ public final class DirectMailDispatcher {
         BlockPos senderPos = mailbox.getBlockPos();
         Address recipient = Mail.getRecipientOrUnknown(outgoing).resolve(service);
 
-        @Nullable Component failure = null;
-        @Nullable BlockPos recipientPos = null;
+        @Nullable BlockPos recipientPos = recipient instanceof BlockAddress recipientAddress
+              ? reachableMailboxPos(service, senderPos, recipientAddress)
+              : null;
 
-        if (!(recipient instanceof BlockAddress recipientAddress)) {
-            failure = DirectMail.NOT_A_MAILBOX;
-        } else {
-            recipientPos = service.getMailboxes().getPositionOf(recipientAddress).orElse(null);
-            if (recipientPos == null) {
-                failure = DirectMail.NOT_A_MAILBOX;
-            } else if (!DirectMail.isInRange(senderPos, recipientPos)) {
-                failure = DirectMail.OUT_OF_RANGE;
-            } else if (service.getMailboxes().getBlockEntityOf(recipientAddress).isEmpty()) {
-                failure = DirectMail.NOT_LOADED;
-            }
-        }
-
-        if (failure != null && mailbox.isInboxFull()) {
-            return; // Nowhere to return it to; it stays in the outgoing slot until there is room.
+        if (recipientPos == null) {
+            // Not something a pigeon can fly straight to: a service or player-less address, an unknown address,
+            // or a mailbox that is too far away or not loaded. Envelope knows how to deal with all of those
+            // (sorting facility, services, lost mail), so hand it over as regular mail. It stays in the outgoing
+            // slot and waits for a courier like any other mail.
+            mailbox.setItem(MailboxBlockEntity.SLOT_MAIL, DirectMail.toRegular(outgoing));
+            mailbox.setChanged();
+            return;
         }
 
         ItemStack mail = Mail.removePreviousDeliveryData(outgoing.copyWithCount(1));
         mailbox.removeItem(MailboxBlockEntity.SLOT_MAIL, 1);
 
-        if (failure != null) {
-            Mail.setSender(mail, sender);
-            Mail.writeToLog(mail, DeliveryRecord.sentFrom(sender));
-            Mail.returned(mail, failure);
-            if (mailbox.addMail(mail)) {
-                mailbox.onMailInserted(mail);
-            } else {
-                Containers.dropItemStack(level, senderPos.getX() + 0.5, senderPos.getY() + 1, senderPos.getZ() + 0.5, mail);
-            }
-            return;
-        }
-
         // The pigeon's delivery writes the sender and the delivery log itself, same as a regular courier.
         DirectMailPigeon.dispatch(level, mail, mailbox.getOwner(), sender, senderPos, (BlockAddress) recipient, recipientPos);
 
         level.playSound(null, senderPos, Envelope.SoundEvents.COURIER_MAIL_PICKUP.get(), SoundSource.NEUTRAL, 0.8f, 1.5f);
+    }
+
+    /**
+     * Position of the recipient's mailbox if a Direct Mail pigeon can deliver there right now: the mailbox is
+     * registered, within range of the sender and its block entity is loaded.
+     */
+    private static @Nullable BlockPos reachableMailboxPos(MailService service, BlockPos senderPos, BlockAddress recipient) {
+        @Nullable BlockPos pos = service.getMailboxes().getPositionOf(recipient).orElse(null);
+        if (pos == null || !DirectMail.isInRange(senderPos, pos) || service.getMailboxes().getBlockEntityOf(recipient).isEmpty()) {
+            return null;
+        }
+        return pos;
     }
 }

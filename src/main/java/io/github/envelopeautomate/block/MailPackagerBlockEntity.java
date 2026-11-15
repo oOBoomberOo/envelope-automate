@@ -5,7 +5,9 @@ import io.github.envelopeautomate.mail.MailboxLink;
 import io.github.envelopeautomate.menu.MailPackagerMenu;
 import io.github.envelopeautomate.stamp.StampSeals;
 import io.github.mortuusars.envelope.Envelope;
+import io.github.mortuusars.envelope.network.packet.clientbound.ClientboundMailboxMenuSetMailPacket;
 import io.github.mortuusars.envelope.world.block.mailbox.MailboxBlockEntity;
+import io.github.mortuusars.envelope.world.inventory.MailboxMenu;
 import io.github.mortuusars.envelope.world.item.AddressTagItem;
 import io.github.mortuusars.envelope.world.item.PackageItem;
 import io.github.mortuusars.envelope.world.item.SealStampItem;
@@ -385,6 +387,7 @@ public class MailPackagerBlockEntity extends BlockEntity implements MenuProvider
                 continue;
             }
 
+            syncOpenMenus(level, mailbox);
             mailbox.removeMail(index);
 
             for (ItemStack stack : contents) {
@@ -396,6 +399,18 @@ public class MailPackagerBlockEntity extends BlockEntity implements MenuProvider
                   0.6f, level.getRandom().nextFloat() * 0.1f + 0.9f);
             return; // One package per cycle
         }
+    }
+
+    /**
+     * Envelope's mailbox menu keeps its own copy of the inbox and is only told about removals (by index), not
+     * about mail that arrived while it was open. Removing such mail would make the menu remove an index its
+     * copy doesn't have and crash the server, so bring every open menu up to date first.
+     */
+    private static void syncOpenMenus(ServerLevel level, MailboxBlockEntity mailbox) {
+        MailboxMenu.executeForPlayersWithMenu(level, mailbox.getAddress(), (player, menu) -> {
+            menu.setMail(mailbox.getAllMail());
+            new ClientboundMailboxMenuSetMailPacket(mailbox.getAllMail()).sendToClient(player);
+        });
     }
 
     private static boolean isUnpackable(ServerLevel level, ItemStack mail) {

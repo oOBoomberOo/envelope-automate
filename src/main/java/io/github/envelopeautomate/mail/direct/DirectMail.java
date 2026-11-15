@@ -1,26 +1,19 @@
 package io.github.envelopeautomate.mail.direct;
 
 import io.github.envelopeautomate.ModRegistry;
-import io.github.mortuusars.envelope.util.Colors;
+import io.github.mortuusars.envelope.Envelope;
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ChunkPos;
 
 /**
  * Direct Mail is flown straight from one mailbox to another by a {@link DirectMailPigeon}, skipping the
  * sorting facility.
- * It only reaches loaded mailboxes within {@link #CHUNK_RADIUS} chunks of the sender.
+ * It only reaches loaded mailboxes within {@link #CHUNK_RADIUS} chunks of the sender; anything else is turned
+ * back into regular mail (see {@link #toRegular}) and left to Envelope's couriers.
  */
 public final class DirectMail {
     public static final int CHUNK_RADIUS = 8;
-
-    public static final Component OUT_OF_RANGE = Component.translatable(
-          "gui.envelope_automate.delivery_log.message.direct_mail.out_of_range", CHUNK_RADIUS).withColor(Colors.TOOLTIP_RED);
-    public static final Component NOT_LOADED = Component.translatable(
-          "gui.envelope_automate.delivery_log.message.direct_mail.not_loaded").withColor(Colors.TOOLTIP_RED);
-    public static final Component NOT_A_MAILBOX = Component.translatable(
-          "gui.envelope_automate.delivery_log.message.direct_mail.not_a_mailbox").withColor(Colors.TOOLTIP_RED);
 
     private DirectMail() {
     }
@@ -30,6 +23,26 @@ public final class DirectMail {
               || stack.is(ModRegistry.SEALED_DIRECT_LETTER.get())
               || stack.is(ModRegistry.DIRECT_PACKAGE.get())
               || stack.is(ModRegistry.SEALED_DIRECT_PACKAGE.get());
+    }
+
+    /**
+     * The regular Envelope counterpart of a Direct Mail stack, with everything it carries (contents, address,
+     * seal, name) kept. Stacks that aren't Direct Mail are returned as they are.
+     */
+    public static ItemStack toRegular(ItemStack stack) {
+        if (stack.is(ModRegistry.DIRECT_LETTER.get())) {
+            return stack.transmuteCopy(Envelope.Items.LETTER.get());
+        }
+        if (stack.is(ModRegistry.SEALED_DIRECT_LETTER.get())) {
+            return stack.transmuteCopy(Envelope.Items.SEALED_LETTER.get());
+        }
+        if (stack.is(ModRegistry.DIRECT_PACKAGE.get())) {
+            return stack.transmuteCopy(Envelope.Items.PACKAGE.get());
+        }
+        if (stack.is(ModRegistry.SEALED_DIRECT_PACKAGE.get())) {
+            return stack.transmuteCopy(Envelope.Items.SEALED_PACKAGE.get());
+        }
+        return stack;
     }
 
     /**

@@ -73,14 +73,18 @@ Pale blue letters and packages that go **point-to-point** instead of through the
   straight to the recipient's mailbox, then vanishes. No courier food is needed. It is Envelope's own pigeon with
   Envelope's flight AI, so it paths around obstacles, carries the mail on its back, and drops the mail if killed.
   Both mailboxes need a free block in front of them that a pigeon can fly to.
-- **Limits:** the recipient must be a **mailbox** (a player address resolves to that player's default mailbox)
-  that is **loaded** and within **8 chunks** of the sender (a 17×17 chunk square around the sender's chunk).
-  Service addresses such as the Cloud Depository can't be reached.
-- **Failures:** undeliverable Direct Mail goes back into the sender's inbox marked *returned*, with the reason in
-  its delivery log (Shift in the tooltip). If the recipient's inbox turns out to be full on arrival, or the pigeon
-  can't reach the mailbox in time, the pigeon carries the mail back. If the sender's inbox is full, the mail waits
-  in the outgoing slot. A pigeon that ends up outside the simulated area hands the mail in immediately instead of
-  flying the rest of the way.
+- **Limits:** a pigeon flies Direct Mail only to a **mailbox** (a player address resolves to that player's
+  default mailbox) that is **loaded** and within **8 chunks** of the sender (a 17×17 chunk square around the
+  sender's chunk).
+- **Fallback to regular mail:** anything else — a service address such as the Mail Service or the Cloud
+  Depository, an unknown address, or a mailbox that is too far away or not loaded — turns the Direct Mail back
+  into its regular counterpart right in the outgoing slot (contents, address and seal kept). From there it is
+  ordinary Envelope mail: it waits for a courier, needs courier food, goes through the sorting facility, and
+  Envelope handles services and lost mail as usual.
+- **In flight:** if the recipient's inbox turns out to be full on arrival, or the pigeon can't reach the mailbox
+  in time, the pigeon carries the mail back to the sender's inbox marked *returned* (reason in the delivery log,
+  Shift in the tooltip). A pigeon that ends up outside the simulated area hands the mail in immediately instead
+  of flying the rest of the way.
 - If the mailbox also holds courier food, a pigeon or bat can occasionally grab Direct Mail before its own pigeon shows up;
   it is then delivered the regular way.
 

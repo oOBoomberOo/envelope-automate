@@ -140,13 +140,10 @@ public class DepositoryTerminalMenu extends AbstractContainerMenu {
         Optional<String> mailbox = terminal.getAttachedMailboxAddress();
         if (mailbox.isPresent()) {
             terminal.post(letter);
-            player.displayClientMessage(Component.translatable("message.envelope_automate.withdrawal_order.posted",
-                  Component.literal(mailbox.get()).withStyle(ChatFormatting.GOLD)), false);
         } else {
             if (!player.getInventory().add(letter)) {
                 player.drop(letter, false);
             }
-            player.displayClientMessage(Component.translatable("message.envelope_automate.withdrawal_order.created"), false);
         }
     }
 
