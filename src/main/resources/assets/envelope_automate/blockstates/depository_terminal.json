@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "facing=north": { "model": "envelope_automate:block/depository_terminal", "y": 0 },
+    "facing=south": { "model": "envelope_automate:block/depository_terminal", "y": 180 },
+    "facing=west": { "model": "envelope_automate:block/depository_terminal", "y": 270 },
+    "facing=east": { "model": "envelope_automate:block/depository_terminal", "y": 90 }
+  }
+}

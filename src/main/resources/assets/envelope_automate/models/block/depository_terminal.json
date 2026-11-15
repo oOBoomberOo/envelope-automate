@@ -1,0 +1,9 @@
+{
+  "parent": "minecraft:block/orientable_with_bottom",
+  "textures": {
+    "top": "envelope_automate:block/depository_terminal_top",
+    "bottom": "envelope_automate:block/mail_packager_bottom",
+    "side": "envelope_automate:block/depository_terminal_side",
+    "front": "envelope_automate:block/depository_terminal_front"
+  }
+}

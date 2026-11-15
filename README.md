@@ -1,0 +1,76 @@
+# Envelope: Automated Mailing
+
+NeoForge 1.21.1 addon for [Envelope](https://github.com/mortuusars/Envelope) (built against 0.8.2) that automates mailing.
+
+## Seal stamp fingerprints
+Sneak + use any Envelope seal stamp to record **your** fingerprint on it (name + UUID, shown in the tooltip).
+Doing it again on your own fingerprint wipes it; another player doing it overwrites it with theirs. Only the
+player themselves can put their fingerprint on a stamp, so handing someone a fingerprinted stamp is handing them
+access to your depository account. The fingerprint survives dyeing/washing the stamp. Names are resolved from the
+UUID when used, so a renamed player's stamps keep working.
+
+- **Mail Packager:** packages are sealed *as the fingerprinted player* (so deposits go to their account).
+  Without a fingerprint, the packager's owner signs.
+- **Depository Terminal:** use a stamp on the terminal to insert it (swaps out the previous one). With a
+  fingerprint, the terminal shows and orders from that player's account, and the header turns blue. Orders are
+  sealed with the stamp's look. Take the stamp out by clicking it in the GUI, or by sneak + using the terminal
+  with an empty hand.
+
+## Blocks
+
+### Mail Packager
+Place it next to a mailbox (any side counts as attached).
+
+- **Packing:** pipes insert into an 18-slot packing buffer. On a **rising redstone edge** it takes up to one
+  package's worth (6 stacks, partial stacks merged), makes a package addressed to the **Address Tag** in its
+  config slot, seals it with the **Seal Stamp** in its config slot (optional, signed on behalf of the player
+  who placed the packager), and puts it in the mailbox's outgoing slot for a courier to pick up.
+  Nothing is used up: no paper box, no address tag, no stamp durability.
+- **Continuous power:** while powered, it also packs whatever is in the buffer once nothing has been inserted
+  or removed for 1.5 seconds (`SETTLE_TICKS` = 30). Its own packing doesn't reset that timer, so a buffer with
+  more than one package's worth keeps packing as each package gets posted.
+  If the mailbox's outgoing slot is taken, the package waits in the packager's outgoing slot, and no new
+  package is packed until it has been posted.
+- **Unpacking:** packages (sealed or unsealed, but not ones with a locked seal) arriving in the mailbox's inbox
+  are pulled out and unpacked into an 18-slot output buffer, but only when all of their contents fit.
+  Letters are left in the mailbox.
+- **Pipes:** the item capability exposes the buffers. Input slots 0–17 are insert-only and output
+  slots 18–35 are extract-only. This works from any side.
+
+### Depository Terminal
+Right-click to browse **your** Cloud Depository account (the account matches your seal signature, which is
+your player name). Stored packages are opened up, so you browse and order individual items, much like
+Create's Stock Ticker. Mail that isn't a browsable package (letters, loot packages) is listed and withdrawn
+as-is.
+
+- The view updates live while open: the server re-checks the account every 0.5 s and only sends an update when
+  something changed (deposits, withdrawals, capacity, or changes from any other mod or command).
+- Sort button next to the search box: **Quantity** (default), **Name**, or **Mod**. `@modid` in search filters by mod.
+- Click an item to add it to the order: Shift adds a stack, Ctrl adds everything, right-click removes.
+- **Deliver to**: any known address. Leave it empty to deliver back to the mailbox the order is sent from.
+- **Send** creates a sealed **Withdrawal Order** letter addressed to the Cloud Depository.
+  - When the terminal is attached to a mailbox (adjacent), the order is posted there automatically.
+    The address field is prefilled with that mailbox.
+  - Otherwise you get the letter and can post it from any mailbox.
+- When the order arrives, the depository takes the items out of your account (reducing stored packages, and
+  removing them once empty) and sends them in packages sealed by the depository to the destination.
+
+## Automated loop
+Collection system → pipes → **Mail Packager** (Address Tag: *Cloud Depository*, your Seal Stamp) → deposited
+into your account. **Depository Terminal** → order to mailbox *X* → **Mail Packager** next to *X* unpacks →
+pipes extract.
+
+## Building
+```
+./gradlew build          # JDK 21; output in build/libs
+./gradlew runClient      # dev client with Envelope on the classpath
+```
+Dependencies (exact pins in `gradle.properties`): Envelope 0.8.2 from Modrinth maven (`6mpcJy5P`), and the
+two libraries Envelope bundles: Mortaar 1.7.2 and Sable Companion 1.6.0.
+
+## Local tools
+`tools/` is local-only tooling and is not versioned. For reference, it holds:
+- `gen_textures.py`: regenerates the block textures from pixel grids (edit the grids, re-run).
+- `recolor_direct_mail.py`: derives the Direct Mail item textures from Envelope's own item textures.
+- `check_resources.py`: checks that JSON resources parse, that every translation key used in Java exists,
+  and that every model texture exists.

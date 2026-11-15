@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "redstone",
+  "pattern": [
+    "GGG",
+    "IAI",
+    "PRP"
+  ],
+  "key": {
+    "G": { "item": "minecraft:glass_pane" },
+    "I": { "item": "minecraft:iron_ingot" },
+    "A": { "item": "envelope:address_tag" },
+    "P": { "tag": "minecraft:planks" },
+    "R": { "item": "minecraft:redstone" }
+  },
+  "result": { "id": "envelope_automate:depository_terminal", "count": 1 }
+}

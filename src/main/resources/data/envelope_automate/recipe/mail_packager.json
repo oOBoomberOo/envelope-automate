@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "redstone",
+  "pattern": [
+    "PIP",
+    "IBI",
+    "PRP"
+  ],
+  "key": {
+    "P": { "tag": "minecraft:planks" },
+    "I": { "item": "minecraft:iron_ingot" },
+    "B": { "item": "envelope:paper_box" },
+    "R": { "item": "minecraft:redstone" }
+  },
+  "result": { "id": "envelope_automate:mail_packager", "count": 1 }
+}

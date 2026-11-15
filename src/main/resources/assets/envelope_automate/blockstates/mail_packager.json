@@ -1,0 +1,12 @@
+{
+  "variants": {
+    "facing=north,powered=false": { "model": "envelope_automate:block/mail_packager", "y": 0 },
+    "facing=north,powered=true": { "model": "envelope_automate:block/mail_packager", "y": 0 },
+    "facing=south,powered=false": { "model": "envelope_automate:block/mail_packager", "y": 180 },
+    "facing=south,powered=true": { "model": "envelope_automate:block/mail_packager", "y": 180 },
+    "facing=west,powered=false": { "model": "envelope_automate:block/mail_packager", "y": 270 },
+    "facing=west,powered=true": { "model": "envelope_automate:block/mail_packager", "y": 270 },
+    "facing=east,powered=false": { "model": "envelope_automate:block/mail_packager", "y": 90 },
+    "facing=east,powered=true": { "model": "envelope_automate:block/mail_packager", "y": 90 }
+  }
+}

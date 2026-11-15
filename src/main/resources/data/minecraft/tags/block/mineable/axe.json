@@ -1,0 +1,7 @@
+{
+  "replace": false,
+  "values": [
+    "envelope_automate:mail_packager",
+    "envelope_automate:depository_terminal"
+  ]
+}
