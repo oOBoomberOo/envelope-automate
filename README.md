@@ -102,10 +102,3 @@ Releases are built by [`.github/workflows/release.yml`](.github/workflows/releas
 the jar and publishes it as a GitHub release.
 Dependencies (exact pins in `gradle.properties`): Envelope 0.8.2 from Modrinth maven (`6mpcJy5P`), and the
 two libraries Envelope bundles: Mortaar 1.7.2 and Sable Companion 1.6.0.
-
-## Local tools
-`tools/` is local-only tooling and is not versioned. For reference, it holds:
-- `gen_textures.py`: regenerates the block textures from pixel grids (edit the grids, re-run).
-- `recolor_direct_mail.py`: derives the Direct Mail item textures from Envelope's own item textures.
-- `check_resources.py`: checks that JSON resources parse, that every translation key used in Java exists,
-  and that every model texture exists.
